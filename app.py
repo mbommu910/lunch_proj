@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
-from openpyxl import load_workbook
+from io import BytesIO
 from rapidfuzz.fuzz import ratio
-from datetime import datetime
 import time
 
 st.title("Dataset Search Tool")
@@ -63,7 +62,7 @@ def find_people_in_dataset(large_file, small_file):
                 if first_name_similarity >= 75 and last_name_similarity >= 75:
                     exact_matches.append(row)
 
-            # Save results immediately after processing each entry
+            # Save results
             if exact_matches:
                 results.extend(exact_matches)
                 st.success(f"✅ Found {len(exact_matches)} exact matches for {target_first_name} {target_last_name}")
@@ -79,17 +78,20 @@ def find_people_in_dataset(large_file, small_file):
                 "EXACT MATCH COUNT": len(exact_matches)
             })
 
-            # Save progress to Excel
-            results_df = pd.DataFrame(results)
-            summary_df = pd.DataFrame(summary_results)
+        # Convert results to DataFrame
+        results_df = pd.DataFrame(results)
+        summary_df = pd.DataFrame(summary_results)
 
-            with pd.ExcelWriter("search_results.xlsx", engine="openpyxl") as writer:
-                results_df.to_excel(writer, sheet_name="Matches", index=False)
-                summary_df.to_excel(writer, sheet_name="Summary", index=False)
+        # Save to an Excel file in memory
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            results_df.to_excel(writer, sheet_name="Matches", index=False)
+            summary_df.to_excel(writer, sheet_name="Summary", index=False)
 
-            time.sleep(1)  # Prevents UI freezing
+        # Set file position to start
+        output.seek(0)
 
-        st.success("✅ Search completed! Results saved in 'search_results.xlsx'")
+        return output
 
     except Exception as e:
         st.error(f"Error processing files: {e}")
@@ -97,7 +99,6 @@ def find_people_in_dataset(large_file, small_file):
 
 if st.button("Search") and uploaded_large and uploaded_small:
     with st.spinner("Searching... This may take a few minutes."):
-        find_people_in_dataset(uploaded_large, uploaded_small)
-
-    # Provide download link after completion
-    st.download_button("Download Results", "search_results.xlsx", file_name="search_results.xlsx")
+        excel_file = find_people_in_dataset(uploaded_large, uploaded_small)
+        if excel_file:
+            st.download_button("Download Results", excel_file, file_name="search_results.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
