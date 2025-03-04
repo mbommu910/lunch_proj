@@ -84,12 +84,15 @@ def find_people_in_dataset(large_file, small_file):
 
         # Save to an Excel file in memory
         output = BytesIO()
+        
+        # Ensure data is properly written before saving
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            results_df.to_excel(writer, sheet_name="Matches", index=False)
-            summary_df.to_excel(writer, sheet_name="Summary", index=False)
-
-        # Set file position to start
-        output.seek(0)
+            if not results_df.empty:
+                results_df.to_excel(writer, sheet_name="Matches", index=False)
+            if not summary_df.empty:
+                summary_df.to_excel(writer, sheet_name="Summary", index=False)
+        
+        output.seek(0)  # Move the buffer position to the beginning
 
         return output
 
@@ -101,4 +104,9 @@ if st.button("Search") and uploaded_large and uploaded_small:
     with st.spinner("Searching... This may take a few minutes."):
         excel_file = find_people_in_dataset(uploaded_large, uploaded_small)
         if excel_file:
-            st.download_button("Download Results", excel_file, file_name="search_results.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            st.download_button(
+                "Download Results", 
+                excel_file, 
+                file_name="search_results.xlsx", 
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
