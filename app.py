@@ -41,6 +41,7 @@ def find_people_in_dataset(large_file, small_file):
         df_small["DATE OF BIRTH"] = pd.to_datetime(df_small["DATE OF BIRTH"], errors="coerce").dt.strftime("%Y-%m-%d")
 
         results = []
+        summary_results = []
 
         # Loop through each entry in the small dataset
         for _, person in df_small.iterrows():
@@ -69,9 +70,23 @@ def find_people_in_dataset(large_file, small_file):
             else:
                 st.warning(f"⚠️ No exact name match, but {len(dob_matches)} records have the same DOB.")
 
+            # Save summary result
+            summary_results.append({
+                "FIRST NAME": target_first_name,
+                "LAST NAME": target_last_name,
+                "DATE OF BIRTH": target_dob,
+                "DOB MATCH COUNT": len(dob_matches),
+                "EXACT MATCH COUNT": len(exact_matches)
+            })
+
             # Save progress to Excel
             results_df = pd.DataFrame(results)
-            results_df.to_excel("search_results.xlsx", index=False, engine="openpyxl")
+            summary_df = pd.DataFrame(summary_results)
+
+            with pd.ExcelWriter("search_results.xlsx", engine="openpyxl") as writer:
+                results_df.to_excel(writer, sheet_name="Matches", index=False)
+                summary_df.to_excel(writer, sheet_name="Summary", index=False)
+
             time.sleep(1)  # Prevents UI freezing
 
         st.success("✅ Search completed! Results saved in 'search_results.xlsx'")
