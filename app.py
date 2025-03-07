@@ -7,8 +7,8 @@ import time
 st.title("Dataset Search Tool")
 
 # File Uploads
-uploaded_large = st.file_uploader("Upload Large Dataset (Excel)", type=["xlsx"])
-uploaded_small = st.file_uploader("Upload Small Dataset (Excel)", type=["xlsx"])
+uploaded_large = st.file_uploader("Upload Main Dataset (Excel)", type=["xlsx"])
+uploaded_small = st.file_uploader("Upload Matching Dataset (Excel)", type=["xlsx"])
 
 def find_people_in_dataset(large_file, small_file):
     try:
